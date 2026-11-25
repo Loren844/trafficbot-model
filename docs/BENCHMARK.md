@@ -18,10 +18,10 @@ Détection de panneaux et de feux tricolores sur le nœud caméra du TurtleBot3.
 
 | Exigence | Valeur | Dimension du benchmark |
 | --- | --- | --- |
-| Fonctionnelle | 5 panneaux, 6 classes : `stop`, `sens_interdit`, `interdit_gauche`, `interdit_droite`, `feu_rouge` (rouge ou orange), `feu_vert` ; mAP@0.5 ≥ 85 % ; rappel ≥ 95 % sur les classes critiques (`stop`, `sens_interdit`, `interdit_gauche`, `interdit_droite`, `feu_rouge`) ; confusion gauche/droite < 5 % ; confusion rouge/vert < 1 % ; objets dès 32 × 32 px | modèle, résolution, dataset, qualité (mAP, rappel, matrice de confusion) |
+| Fonctionnelle | 5 panneaux, 6 classes : `stop`, `sens_interdit`, `interdit_gauche`, `interdit_droite`, `feu_rouge` (rouge ou orange), `feu_vert` ; mAP@0.5 ≥ 85 % ; rappel ≥ 95 % sur les classes critiques (`stop`, `sens_interdit`, `interdit_gauche`, `interdit_droite`, `feu_rouge`) ; confusion gauche/droite < 5 % ; confusion rouge/vert < 1 % ; objets dès 32 × 32 px à l'entrée du modèle (panneaux de 10 cm : ≈ 53 px à 0,5 m en 320) | modèle, résolution, dataset, qualité (mAP, rappel, matrice de confusion) |
 | Optimisation | perte INT8 vs FP32 ≤ 1 point de mAP | précision, mAP mesurée sur la cible |
 | Temps réel | capture → détection p95 ≤ 100 ms, p99 ≤ 150 ms ; ≥ 10 FPS soutenus 10 min ; < 5 % d'images perdues | latence pipeline (p50/p95/p99), FPS soutenus, images perdues |
-| Énergie | dans le budget de l'alimentation USB-C de la carte (Pi 4 : 5 V / 3 A) | puissance moyenne et pic, puissance idle, énergie par inférence |
+| Énergie | dans le budget de l'alimentation USB-C de la carte (Pi 4 : 5 V / 3 A ; Pi 5 + Hailo : 5 V / 5 A) | puissance moyenne et pic, puissance idle, énergie par inférence |
 | Thermique | pas de throttling après 10 min de charge | température, fréquence CPU, drapeaux de throttling |
 | Mémoire | RSS ≤ 500 Mo | mémoire max |
 | Coût | coût par configuration (carte + accélérateur + caméra) | coût unitaire |
@@ -35,14 +35,15 @@ Détection de panneaux et de feux tricolores sur le nœud caméra du TurtleBot3.
 
 | Fixées (contrôlées) | Variées (indépendantes) | Mesurées (dépendantes) |
 | --- | --- | --- |
-| Architecture YOLO nano, jeu de test figé, prétraitement (`preprocess.py`), batch 1, nombre de runs, refroidissement, image OS, température ambiante relevée | Machine (Dell XPS, MacBook M5, Pi 4, Pi 5), architecture CPU (x86 Intel / ARM), accélérateur (CPU / Hailo), précision (FP32 / FP16 / INT8), runtime (ONNX Runtime, TFLite, HailoRT), résolution (320 / 640) | Latence par étage, FPS, puissance, énergie / inférence, mémoire, temps de chargement, mAP, température, couverture d'opérateurs Hailo |
+| Architecture YOLO nano, jeu de test figé, prétraitement (`preprocess.py`), batch 1, nombre de runs, refroidissement, image OS, température ambiante relevée | Machine (Dell XPS, MacBook M5, Pi 4, Pi 5), architecture CPU (x86 Intel / ARM), accélérateur (CPU / Hailo), précision (FP32 / INT8), runtime (ONNX Runtime, TFLite, HailoRT), résolution (320 / 640) | Latence par étage, FPS, puissance, énergie / inférence, mémoire, temps de chargement, mAP, température, couverture d'opérateurs Hailo |
 
 - **Modèle** : YOLO nano, présent sur tous les runtimes et dans le Hailo Model Zoo. Entrée 320 × 320, variante 640. Chaque conversion, quantification et compilation est journalisée.
 - **Données** : photos réelles des panneaux imprimés (caméra du robot) et captures Gazebo, annotées au format YOLO. Version figée, split avec graine, checksums SHA-256.
 - **Augmentation** : pas de retournement horizontal, car il transformerait `interdit_gauche` en `interdit_droite` (ou alors il faut échanger les deux étiquettes) ; pas de variation de teinte forte, qui mélangerait les couleurs des feux.
 - **Calibration INT8** : ≈ 200 images du train, disjointes du test.
-- **Test sur cible** : sous-ensemble figé de ≈ 500 images, identique sur toutes les machines.
-- **Rejeu** : la même séquence enregistrée (rosbag) est rejouée sur chaque machine. La Pi Camera en direct ne sert qu'à mesurer l'étage capteur sur les Pi.
+- **Test sur cible** : sous-ensemble figé de 200 à 1000 images (taille à fixer), identique sur toutes les machines.
+- **Rejeu** : la même séquence enregistrée (rosbag, ≥ 1000 images) est rejouée sur chaque machine pour les comparaisons.
+- **Caméra live** : sur chaque Pi, un run avec la Camera Module 2 en direct valide l'exigence capture → détection (le Dell XPS et le MacBook M5 restent en rosbag).
 - **Plan** : faire varier un facteur à la fois, puis croiser les facteurs pour construire les abaques.
 
 | Machine | Architecture | Runtime | Précisions | Résolutions |
@@ -92,7 +93,7 @@ Le Dell XPS et le MacBook M5 ne sont pas mesurables avec le TC66C : on y compare
 - **Thermique** : refroidissement fixe et noté par carte ; température et throttling journalisés pendant chaque run.
 - **Horloges** : governor `performance` sur les Pi ; Dell XPS en mode d'alimentation « performances » et MacBook M5 sans mode économie d'énergie, tous deux sur secteur.
 - **Isolation** : même image Raspberry Pi OS, services inutiles et interfaces non utilisées coupés, pas d'interface graphique.
-- **Connexions** : même alimentation, même câble, même port ; lien PCIe du Hailo relevé (`lspci -vv`).
+- **Connexions** : même alimentation par carte (Pi 4 : 5 V / 3 A, Pi 5 : 5 V / 5 A), même câble, même port ; câble caméra avec adaptateur 22 broches sur le Pi 5 ; lien PCIe du Hailo relevé (`lspci -vv`).
 - **Ambiance** : température de la salle relevée ; pas de mesure juste après la mise sous tension.
 - **Ordre** : runs entrelacés entre configurations pour éviter la dérive.
 
@@ -143,7 +144,7 @@ Le Dell XPS et le MacBook M5 ne sont pas mesurables avec le TC66C : on y compare
 | Étape | Choix pour « détection de panneaux et de feux sur le TurtleBot3 » |
 | --- | --- |
 | 1 Goal | p95 ≤ 100 ms capture → détection, ≥ 10 FPS soutenus, mAP@0.5 ≥ 85 %, rappel ≥ 95 % sur les classes critiques, perte INT8 ≤ 1 point, RSS ≤ 500 Mo, sans throttling. Abaques de latence, puissance et mAP par machine |
-| 2 Workload | YOLO nano INT8/FP32 en 320 (variante 640), jeu de test figé de panneaux imprimés réels + Gazebo ; séquence enregistrée rejouée, caméra live pour l'étage capteur |
+| 2 Workload | YOLO nano INT8/FP32 en 320 (variante 640), jeu de test figé de panneaux imprimés réels + Gazebo ; séquence enregistrée rejouée pour les comparaisons, caméra live sur les Pi pour valider capture → détection |
 | 3 Variables | Fixées : modèle, jeu de test, batch 1. Variées : machine (Dell XPS x86, MacBook M5 ARM, Pi 4, Pi 5, Pi 5 + Hailo), architecture x86 / ARM, précision, runtime, résolution 320 ou 640 |
 | 4 Metrics | Latence pipeline p50/p95/p99, temps par étage, FPS soutenus, images perdues, puissance, mJ par inférence, mAP sur cible, RSS, température |
 | 5 Setup | TC66C en point B, même alimentation et même refroidissement, governor `performance`, lien PCIe relevé, idle journalisé |
