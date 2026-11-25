@@ -6,7 +6,7 @@ Ce dépôt contient le modèle de détection des panneaux et des feux utilisé p
 
 ## Classes détectées
 
-`stop`, `sens_interdit`, `cul_de_sac`, `feu_rouge`, `feu_orange`, `feu_vert`, `passage_pieton` (optionnel)
+`stop`, `sens_interdit`, `interdit_gauche`, `interdit_droite`, `feu_rouge` (rouge ou orange), `feu_vert` ; `passage_pieton` en option
 
 ## Machines du benchmark
 
@@ -15,8 +15,8 @@ Ce dépôt contient le modèle de détection des panneaux et des feux utilisé p
 | Raspberry Pi 4 (4 Go) | CPU |
 | Raspberry Pi 5 | CPU |
 | Raspberry Pi 5 | Hailo |
-| PC x86 | CPU |
-| MacBook (Apple Silicon) | CPU |
+| Dell XPS (x86, Linux) | CPU |
+| MacBook M5 (Apple Silicon) | CPU |
 
 Capteur : Raspberry Pi Camera. Consommation mesurée avec un wattmètre USB-C JT-TC66C (Raspberry Pi uniquement).
 
