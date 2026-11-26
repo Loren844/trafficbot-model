@@ -42,18 +42,6 @@ Les deux Pi utilisent la même image Raspberry Pi OS 64 bits, sans interface gra
 
    Pour lire la vitesse du lien PCIe du Hailo, lancer le script avec `sudo`.
 
-### Pi 5 : modules Python qui plantent (Bus error)
-
-Le noyau par défaut du Pi 5 (`rpi-2712`) utilise des pages mémoire de 16 Ko. Certains paquets pip pour ARM sont compilés pour des pages de 4 Ko et plantent à l'import avec un `Bus error`. `versions.sh` affiche la taille de page et signale chaque module qui plante.
-
-Si un module plante, passer le Pi 5 sur le noyau à pages de 4 Ko, puis redémarrer :
-
-```bash
-echo 'kernel=kernel8.img' | sudo tee -a /boot/firmware/config.txt
-```
-
-`getconf PAGESIZE` doit alors afficher `4096`. Ce choix est une variable fixée du protocole : le noyau utilisé est noté dans les relevés.
-
 ### Puce Hailo
 
 `hailortcli fw-control identify` affiche `Device Architecture: HAILO8L`. La carte est donc un Hailo-8L (13 TOPS annoncés), même si `lspci` et le champ `Board Name` indiquent « Hailo-8 ». Le rapport et les abaques mentionnent le Hailo-8L.
@@ -89,7 +77,7 @@ Une fois les scripts lancés, les sorties sont rangées dans `results/setup_<mac
 
 | Machine | OS | Noyau | Python | ONNX Runtime | LiteRT | HailoRT | Lien PCIe |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Pi 4 | | | | | | — | — |
-| Pi 5 | Debian 13 (trixie) | 6.18.50+rpt-rpi-2712 | 3.13.5 | à relever | à relever | 4.23.0 (Hailo-8L) | Gen3 x1 (8 GT/s) |
+| Pi 4 | Debian 13 (trixie) | 6.18.50+rpt-rpi-v8 | 3.13.5 | 1.32.0 | 2.4.1 | — | — |
+| Pi 5 | Debian 13 (trixie) | 6.18.50+rpt-rpi-2712 (noyau d'origine, pages 16 Ko) | 3.13.5 | 1.32.0 | 2.4.1 | 4.23.0 (Hailo-8L) | Gen3 x1 (8 GT/s) |
 | PC x86 | | | | | — | — | — |
 | MacBook M5 | | | | | — | — | — |

@@ -90,7 +90,7 @@ echo "taille de page mémoire: $(getconf PAGESIZE 2>/dev/null || echo inconnue) 
 # (Bus error, Segmentation fault) est signalé sans arrêter le reste du relevé.
 for spec in numpy:numpy cv2:opencv onnxruntime:onnxruntime ai_edge_litert:ai-edge-litert hailo_platform:hailort picamera2:picamera2; do
   mod="${spec%%:*}"; name="${spec##*:}"
-  out=$("$PY" -c "
+  out=$( ( "$PY" -c "
 import importlib
 m = importlib.import_module('$mod')
 v = getattr(m, '__version__', None)
@@ -101,7 +101,7 @@ if v is None:
     except Exception:
         v = 'installé'
 print(v)
-" 2>/dev/null)
+" ) 2>/dev/null)
   rc=$?
   if [ $rc -eq 0 ]; then
     echo "$name: $out"
@@ -111,4 +111,4 @@ print(v)
     echo "$name: PLANTAGE à l'import (code $rc, 135 = Bus error, 139 = Segmentation fault)"
   fi
 done
-"$PY" -c "import onnxruntime as ort; print('onnxruntime providers:', ', '.join(ort.get_available_providers()))" 2>/dev/null || true
+( "$PY" -c "import onnxruntime as ort; print('onnxruntime providers:', ', '.join(ort.get_available_providers()))" ) 2>/dev/null || true

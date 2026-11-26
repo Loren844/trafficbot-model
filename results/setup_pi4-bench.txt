@@ -1,0 +1,49 @@
+# Configuration de pi4-bench
+date: 2026-11-26T20:24:57+01:00
+
+## Système
+modèle: Raspberry Pi 4 Model B Rev 1.5
+os: Debian GNU/Linux 13 (trixie)
+noyau: 6.18.50+rpt-rpi-v8
+architecture: aarch64
+CPU(s):                                  4
+Model name:                              Cortex-A72
+instructions INT8:
+               total        used        free      shared  buff/cache   available
+Mem:            3789         205        3471           9         187        3584
+
+## Fréquence CPU
+cpu0: governor=performance cur=1800 MHz max=1800 MHz
+cpu1: governor=performance cur=1800 MHz max=1800 MHz
+cpu2: governor=performance cur=1800 MHz max=1800 MHz
+cpu3: governor=performance cur=1800 MHz max=1800 MHz
+
+## Raspberry Pi (vcgencmd)
+température: temp=36.5'C
+throttling: throttled=0x0   (0x0 = aucun)
+arm: frequency(48)=1800404352
+firmware: Sep 14 2026 14:49:30  Copyright (c) 2012 Broadcom version a86983925695a7e63166327d7c002d64040ed31d (clean) (release) (start)
+
+## Caméra
+  Available cameras
+  -----------------
+  0 : ov5647 [2592x1944 10-bit GBRG] (/base/soc/i2c0mux/i2c@1/ov5647@36)
+      Modes: 'SGBRG10_CSI2P' : 640x480 [62.50 fps - (16, 0)/2560x1920 crop]
+                               1296x972 [46.34 fps - (0, 0)/2592x1944 crop]
+                               1920x1080 [32.81 fps - (348, 434)/1928x1080 crop]
+                               2592x1944 [15.63 fps - (0, 0)/2592x1944 crop]
+
+
+## Hailo
+aucun périphérique Hailo sur le bus PCIe
+config.txt (pcie):
+
+## Python et runtimes (.venv/bin/python)
+python: 3.13.5
+numpy: 2.5.5
+opencv: 5.1.0
+onnxruntime: 1.32.0
+ai-edge-litert: 2.4.1
+hailort (python): absent
+picamera2: 0.3.39
+onnxruntime providers: AzureExecutionProvider, CPUExecutionProvider
