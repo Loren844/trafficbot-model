@@ -84,27 +84,31 @@ if [ -r /boot/firmware/config.txt ]; then
 fi
 
 section "Python et runtimes ($PY)"
-"$PY" - <<'EOF'
-import importlib, platform
-print("python:", platform.python_version())
-for mod, name in [("numpy", "numpy"), ("cv2", "opencv"), ("onnxruntime", "onnxruntime"),
-                  ("ai_edge_litert", "ai-edge-litert"), ("hailo_platform", "hailort (python)"),
-                  ("picamera2", "picamera2")]:
+echo "python: $("$PY" -c 'import platform; print(platform.python_version())')"
+echo "taille de page mémoire: $(getconf PAGESIZE 2>/dev/null || echo inconnue) octets"
+# Chaque module est importé dans un processus séparé : un module qui plante
+# (Bus error, Segmentation fault) est signalé sans arrêter le reste du relevé.
+for spec in numpy:numpy cv2:opencv onnxruntime:onnxruntime ai_edge_litert:ai-edge-litert hailo_platform:hailort picamera2:picamera2; do
+  mod="${spec%%:*}"; name="${spec##*:}"
+  out=$("$PY" -c "
+import importlib
+m = importlib.import_module('$mod')
+v = getattr(m, '__version__', None)
+if v is None:
     try:
-        m = importlib.import_module(mod)
-        v = getattr(m, "__version__", None)
-        if v is None:
-            try:
-                from importlib.metadata import version
-                v = version(name.split(" ")[0])
-            except Exception:
-                v = "installé"
-        print(f"{name}: {v}")
+        from importlib.metadata import version
+        v = version('$name')
     except Exception:
-        print(f"{name}: absent")
-try:
-    import onnxruntime as ort
-    print("onnxruntime providers:", ", ".join(ort.get_available_providers()))
-except Exception:
-    pass
-EOF
+        v = 'installé'
+print(v)
+" 2>/dev/null)
+  rc=$?
+  if [ $rc -eq 0 ]; then
+    echo "$name: $out"
+  elif [ $rc -eq 1 ]; then
+    echo "$name: absent"
+  else
+    echo "$name: PLANTAGE à l'import (code $rc, 135 = Bus error, 139 = Segmentation fault)"
+  fi
+done
+"$PY" -c "import onnxruntime as ort; print('onnxruntime providers:', ', '.join(ort.get_available_providers()))" 2>/dev/null || true

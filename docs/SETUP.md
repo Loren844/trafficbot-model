@@ -7,7 +7,7 @@ Procédure de mise en place des Raspberry Pi pour l'étape 5 (Setup) du [protoco
 | Machine | Refroidissement | Alimentation | Caméra | Accélérateur |
 | --- | --- | --- | --- | --- |
 | Raspberry Pi 4 (4 Go) | dissipateurs métalliques passifs | USB-C 5 V / 3 A | Camera Module 2 | — |
-| Raspberry Pi 5 | ventilateur | USB-C 5 V / 5 A | Camera Module 2 (adaptateur 22 broches) | Hailo sur PCIe, dissipateur métallique passif |
+| Raspberry Pi 5 | ventilateur | USB-C 5 V / 5 A | Camera Module (OV5647, adaptateur 22 broches) | Hailo-8L (13 TOPS) sur PCIe, dissipateur métallique passif |
 | PC x86 (Dell XPS) | d'origine | secteur, mode « performances » | — | — |
 | MacBook M5 | d'origine | secteur, sans mode économie d'énergie | — | — |
 
@@ -31,7 +31,7 @@ Les deux Pi utilisent la même image Raspberry Pi OS 64 bits, sans interface gra
 
    Le script :
    - fixe le governor CPU à `performance` à chaque démarrage (service `cpu-performance`) ;
-   - désactive Bluetooth, impression, Avahi, ModemManager et triggerhappy, et démarre en mode console ;
+   - désactive Bluetooth, impression, ModemManager et triggerhappy, et démarre en mode console. Avahi reste actif, car il fournit les noms `<hôte>.local` utilisés pour le SSH ;
    - crée `.venv` avec numpy, OpenCV, ONNX Runtime et LiteRT (`ai-edge-litert`). Le venv voit les paquets système, donc `picamera2` et le module Python de HailoRT restent accessibles.
 
 3. Redémarrer, puis relever la configuration :
@@ -41,6 +41,22 @@ Les deux Pi utilisent la même image Raspberry Pi OS 64 bits, sans interface gra
    ```
 
    Pour lire la vitesse du lien PCIe du Hailo, lancer le script avec `sudo`.
+
+### Pi 5 : modules Python qui plantent (Bus error)
+
+Le noyau par défaut du Pi 5 (`rpi-2712`) utilise des pages mémoire de 16 Ko. Certains paquets pip pour ARM sont compilés pour des pages de 4 Ko et plantent à l'import avec un `Bus error`. `versions.sh` affiche la taille de page et signale chaque module qui plante.
+
+Si un module plante, passer le Pi 5 sur le noyau à pages de 4 Ko, puis redémarrer :
+
+```bash
+echo 'kernel=kernel8.img' | sudo tee -a /boot/firmware/config.txt
+```
+
+`getconf PAGESIZE` doit alors afficher `4096`. Ce choix est une variable fixée du protocole : le noyau utilisé est noté dans les relevés.
+
+### Puce Hailo
+
+`hailortcli fw-control identify` affiche `Device Architecture: HAILO8L`. La carte est donc un Hailo-8L (13 TOPS annoncés), même si `lspci` et le champ `Board Name` indiquent « Hailo-8 ». Le rapport et les abaques mentionnent le Hailo-8L.
 
 ### Lien PCIe du Hailo (Pi 5)
 
@@ -74,6 +90,6 @@ Une fois les scripts lancés, les sorties sont rangées dans `results/setup_<mac
 | Machine | OS | Noyau | Python | ONNX Runtime | LiteRT | HailoRT | Lien PCIe |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Pi 4 | | | | | | — | — |
-| Pi 5 | | | | | | | |
+| Pi 5 | Debian 13 (trixie) | 6.18.50+rpt-rpi-2712 | 3.13.5 | à relever | à relever | 4.23.0 (Hailo-8L) | Gen3 x1 (8 GT/s) |
 | PC x86 | | | | | — | — | — |
 | MacBook M5 | | | | | — | — | — |

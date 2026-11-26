@@ -37,7 +37,8 @@ systemctl enable --now cpu-performance.service
 cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor | sort | uniq -c
 
 echo "== 2. Services inutiles"
-for s in bluetooth hciuart cups cups-browsed avahi-daemon ModemManager triggerhappy; do
+# avahi-daemon reste actif : il fournit les noms <hôte>.local utilisés pour le SSH.
+for s in bluetooth hciuart cups cups-browsed ModemManager triggerhappy; do
   if systemctl list-unit-files "$s.service" 2>/dev/null | grep -q "^$s.service"; then
     systemctl disable --now "$s.service" >/dev/null 2>&1 && echo "désactivé : $s"
   fi
